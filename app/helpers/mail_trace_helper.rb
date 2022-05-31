@@ -1,0 +1,2 @@
+module MailTraceHelper
+end

@@ -1,0 +1,2 @@
+module StandardInterfaceHelper
+end
