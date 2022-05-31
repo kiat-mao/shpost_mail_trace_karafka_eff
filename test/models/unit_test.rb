@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class InterfaceLogTest < ActiveSupport::TestCase
+class UnitTest < ActiveSupport::TestCase
   # test "the truth" do
   #   assert true
   # end

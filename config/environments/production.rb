@@ -58,7 +58,7 @@ Rails.application.configure do
 
   # Use a real queuing backend for Active Job (and separate queues per environment).
   # config.active_job.queue_adapter     = :resque
-  # config.active_job.queue_name_prefix = "shpost_mail_message_4_rails_6_production"
+  # config.active_job.queue_name_prefix = "shpost_mail_trace_karafka_eff"
 
   config.action_mailer.perform_caching = false
 

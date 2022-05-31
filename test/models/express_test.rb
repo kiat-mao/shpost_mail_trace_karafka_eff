@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class MailTraceDetailTest < ActiveSupport::TestCase
+class ExpressTest < ActiveSupport::TestCase
   # test "the truth" do
   #   assert true
   # end

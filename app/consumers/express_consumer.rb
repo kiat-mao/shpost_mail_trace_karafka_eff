@@ -1,4 +1,4 @@
-class MailTraceTestConsumer < ApplicationConsumer
+class ExpressConsumer < ApplicationConsumer
 	@@mail_lock = Mutex.new
 
 	def consume
@@ -16,7 +16,7 @@ class MailTraceTestConsumer < ApplicationConsumer
 	      begin
 	      	message_hash = message.payload
 	      	# sleep(0.1)
-	      	MailTrace.save_mail_trace(message_hash, Time.now)
+	      	Express.(message_hash, Time.now)
 	      rescue Exception => e
 	      	@error_msg = "#{e.class.name} #{e.message}"
 	      	Rails.logger.error("#{e.class.name} #{e.message}")
@@ -26,7 +26,7 @@ class MailTraceTestConsumer < ApplicationConsumer
 			      Rails.logger.error(x)
 			    end
 
-			    InterfaceLog.log("mail_trace_test_consumer", "consume", false, {request_url: "", params: message_hash, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg}) #if @status.eql? false#if Rails.env.development?
+			    InterfaceLog.log("express_consumer", "consume", false, {request_url: "", params: message_hash, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg}) #if @status.eql? false#if Rails.env.development?
 	      end
 	    end
 	  end
@@ -60,7 +60,7 @@ class MailTraceTestConsumer < ApplicationConsumer
 				      	message_hash = message.payload
 				      	# sleep(0.1)
 					      
-		      			MailTrace.save_mail_trace(message_hash, Time.now)
+		      			Express.(message_hash, Time.now)
 		      		end
 		      	rescue Exception => e
 			      	@error_msg = "#{e.class.name} #{e.message}"
@@ -71,7 +71,7 @@ class MailTraceTestConsumer < ApplicationConsumer
 					      # Rails.logger.error(x)
 					    end
 
-					    InterfaceLog.log("mail_trace_test_consumer", "consume", false, {request_url: "", params: message_hash.to_json, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg})
+					    InterfaceLog.log("express_consumer", "consume", false, {request_url: "", params: message_hash.to_json, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg})
 					  end
 					end
 				# end

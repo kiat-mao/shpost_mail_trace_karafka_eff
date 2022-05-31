@@ -84,33 +84,14 @@ class KarafkaApp < Karafka::App
   # )
 
   consumer_groups.draw do
-    consumer_group :mail_trace_group do
+    consumer_group :express_refresh_trace_group do
       batch_fetching true
       
       topic :mailtraceproduction do
-        consumer MailTraceTestConsumer
+        consumer ExpressConsumer
         batch_consuming true 
       end
     end
-
-    # consumer_group :mail_trace_group do
-    #   batch_fetching true
-      
-    #   topic :mail_trace do
-    #     consumer MailTraceTestConsumer
-    #     batch_consuming true 
-    #   end
-    # end
-
-
-    # consumer_group :mail_trace_group do
-    #   batch_fetching true
-      
-    #   topic :mail_trace do
-    #     consumer MailTraceTestConsumer
-    #     batch_consuming true 
-    #   end
-    # end
 
 
     # topic :example do
