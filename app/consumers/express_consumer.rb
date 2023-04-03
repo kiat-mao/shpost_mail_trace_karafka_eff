@@ -16,7 +16,7 @@ class ExpressConsumer < ApplicationConsumer
 	      begin
 	      	message_hash = message.payload
 	      	# sleep(0.1)
-	      	Express.(message_hash, Time.now)
+	      	Express.refresh_trace(message_hash, Time.now)
 	      rescue Exception => e
 	      	@error_msg = "#{e.class.name} #{e.message}"
 	      	Rails.logger.error("#{e.class.name} #{e.message}")
@@ -26,7 +26,7 @@ class ExpressConsumer < ApplicationConsumer
 			      Rails.logger.error(x)
 			    end
 
-			    InterfaceLog.log("express_consumer", "consume", false, {request_url: "", params: message_hash, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg}) #if @status.eql? false#if Rails.env.development?
+			    # InterfaceLog.log("express_consumer", "consume", false, {request_url: "", params: message_hash, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg}) #if @status.eql? false#if Rails.env.development?
 	      end
 	    end
 	  end
@@ -60,7 +60,7 @@ class ExpressConsumer < ApplicationConsumer
 				      	message_hash = message.payload
 				      	# sleep(0.1)
 					      
-		      			Express.(message_hash, Time.now)
+		      			Express.refresh_trace(message_hash, Time.now)
 		      		end
 		      	rescue Exception => e
 			      	@error_msg = "#{e.class.name} #{e.message}"
@@ -71,7 +71,7 @@ class ExpressConsumer < ApplicationConsumer
 					      # Rails.logger.error(x)
 					    end
 
-					    InterfaceLog.log("express_consumer", "consume", false, {request_url: "", params: message_hash.to_json, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg})
+					    # InterfaceLog.log("express_consumer", "consume", false, {request_url: "", params: message_hash.to_json, response_body: "", request_ip: "", business_code: "", parent: "", error_msg: @error_msg})
 					  end
 					end
 				# end

@@ -44,19 +44,22 @@ class Express < ApplicationRecord
   def self.refresh_trace msg_hash, received_at
     #init message
     express_no = msg_hash.first["traceNo"]
-    traces = msg_hash
 
-    express = self.find_by express_no: express_no
+    last_trace = Express.get_last_trace msg_hash
+
+    express = self.waiting.where("last_op_at < '#{last_trace['opTime']}'").find_by(express_no: express_no)
 
     #only update not waiting express to avoid repeating
     if ! express.blank? && express.waiting? 
-      express.refresh_trace! traces
+      express.refresh_trace! last_trace
     end
   end
 
   #for karafka_eff
-  def refresh_trace! traces = nil
-    self.refresh_trace traces
+  def refresh_trace! last_trace = nil
+    self.refresh_trace last_trace
+
+    # Rails.logger.error("======express_no #{self.express_no}, status #{self.status}, at #{self.last_op_at}, desc #{self.last_op_desc}======")
 
     if ! self.del?
       self.save!
@@ -65,8 +68,8 @@ class Express < ApplicationRecord
     end
   end
 
-  def refresh_trace traces
-    last_trace = Express.get_last_trace traces
+  def refresh_trace last_trace
+    # last_trace = Express.get_last_trace traces
 
     # return if last_trace.blank?
     self.last_op_at = last_trace["opTime"]
@@ -77,8 +80,14 @@ class Express < ApplicationRecord
     self.whereis = self.waiting? ? Express.to_whereis(last_trace["opCode"]) : nil
     self.status = Express.get_status(last_trace["opCode"])
 
+    # 4 dewu
+    self.last_prov = last_trace["opOrgProvName"]
+    self.last_city = last_trace["opOrgCity"]
+    self.is_change_addr = true if last_trace["opCode"].eql?("802")
+    self.is_cancelled  = true if last_trace["opCode"].eql?("801")
+
     begin
-      self.delivered_status = Express.get_delivered_status(last_trace["opCode"]), last_trace["opDesc"]))
+      self.delivered_status = Express.get_delivered_status(last_trace["opCode"], last_trace["opDesc"])
     rescue
     end
 
@@ -107,10 +116,10 @@ class Express < ApplicationRecord
     returns_code = ["708", '711']
     delete_code = ["207"]
 
-    status = Express::STATUS[:del] if opt_code.in? delete_code
-    status ||= Express::STATUS[:returns] if opt_code.in? returns_code
-    status ||= Express::STATUS[:delivered] if opt_code.in? delivered_code
-    status ||= Express::STATUS[:waiting]
+    status = Express::statuses[:del] if opt_code.in? delete_code
+    status ||= Express::statuses[:returns] if opt_code.in? returns_code
+    status ||= Express::statuses[:delivered] if opt_code.in? delivered_code
+    status ||= Express::statuses[:waiting]
 
     return status
   end
@@ -119,17 +128,26 @@ class Express < ApplicationRecord
     if !opt_code.blank?
       if opt_code.eql? '704'
         if opt_desc.include? '本人'
-          delivered_status = Express::DELIVERED_STATUS[:own]
+          delivered_status = Express::delivered_statuses[:own]
         elsif opt_desc.include? '他人'
-          delivered_status = Express::DELIVERED_STATUS[:other]
+          delivered_status = Express::delivered_statuses[:other]
         else
-          delivered_status = Express::DELIVERED_STATUS[:unit]
+          delivered_status = Express::delivered_statuses[:unit]
         end
       elsif opt_code.eql? '748'
-        delivered_status = Express::DELIVERED_STATUS[:own]
+        delivered_status = Express::delivered_statuses[:own]
       elsif opt_code.eql? '747'
-        delivered_status = Express::DELIVERED_STATUS[:unit]
+        delivered_status = Express::delivered_statuses[:unit]
       end
+    end
+  end
+
+  def self.to_whereis(code)
+    delivery_part_code = ['306', '307', '702', '705']
+    if code.in? delivery_part_code
+      whereis[:delivery_part]
+    else
+      whereis[:in_transit]
     end
   end
 
