@@ -14,9 +14,11 @@ class ExpressConsumer < ApplicationConsumer
 	    params_batch.each do |message|
 	      # puts "Message payload: #{message.payload}"
 	      begin
-	      	message_hash = message.payload
+	      	if ! message.blank?
+	      		message_hash = message.payload
 	      	# sleep(0.1)
-	      	Express.refresh_trace(message_hash, Time.now)
+		      	ExpressConsumer.refresh_trace(message_hash, Time.now)
+		      end
 	      rescue Exception => e
 	      	@error_msg = "#{e.class.name} #{e.message}"
 	      	Rails.logger.error("#{e.class.name} #{e.message}")
@@ -84,5 +86,29 @@ class ExpressConsumer < ApplicationConsumer
 
     t2 = Time.now
 	  Rails.logger.error "============#{id} #{t2} #{t2-t1}============"
+  end
+
+
+  def self.refresh_trace msg_hash, received_at
+    #init message
+    express_no = msg_hash.first["traceNo"]
+
+    last_trace = Express.get_last_trace msg_hash
+
+    express = Express.waiting.where("last_op_at < '#{last_trace['opTime']}'").find_by(express_no: express_no)
+
+    #only update not waiting express to avoid repeating
+    if ! express.blank? && express.waiting? 
+      express.refresh_trace! last_trace
+      return
+    end
+
+    traces = InternationalExpress.get_traces msg_hash
+
+  	international_express = InternationalExpress.waiting.find_by(express_no: express_no)
+
+  	if ! international_express.blank? && international_express.waiting? 
+  		international_express.refresh_traces! traces
+  	end
   end
 end
