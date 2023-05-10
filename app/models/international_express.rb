@@ -1,19 +1,36 @@
 class InternationalExpress < ApplicationRecord
   belongs_to :business, optional: true
 
-  enum status: {waiting: 'waiting', returns: 'returns'}
-  STATUS_NAME = { waiting: '未妥投', returns: '退回'}
+  enum status: {waiting: 'waiting', returns: 'returns', out: 'out'}
+  STATUS_NAME = { waiting: '未妥投', returns: '退回', out: 'out'}
 
 
+  def self.refresh_traces! msg_hash
+    express_no = msg_hash.first["traceNo"]
+    international_express = InternationalExpress.waiting.find_by(express_no: express_no)
 
-  def refresh_traces! traces = nil
-    traces.sort{|x,y| x["opTime"] <=> y["opTime"]}.each do |trace|
-      self.refresh_trace trace
+    if ! international_express.blank? && international_express.waiting? 
+      international_express.refresh_traces! msg_hash
+      return true
+    else
+      return false
     end
   end
 
-  def leaved_orig_at
-    return leaved_orig_at.blank? ? posting_date : leaved_orig_at
+  def refresh_traces! msg_hash
+    self.refresh_traces msg_hash
+    
+    self.save!
+  end
+
+  def refresh_traces msg_hash
+    traces = InternationalExpress.get_traces_in_opcodes_and_shorted msg_hash
+
+    if ! traces.blank?
+      traces.each do |trace|
+        self.refresh_trace trace
+      end
+    end
   end
 
   def refresh_trace trace
@@ -32,6 +49,7 @@ class InternationalExpress < ApplicationRecord
       self.is_leaved = true
       self.leaved_at = op_time
       self.leaved_hour = ((self.leaved_at - self.leaved_orig_at)/60/60).to_i + 1
+      self.status = InternationalExpress::statuses[:out] 
     when '305'
       self.is_leaved_orig = true
       self.leaved_orig_at = op_time
@@ -56,12 +74,16 @@ class InternationalExpress < ApplicationRecord
       # self.last_unit = Unit.find_by no: trace["opOrgCode"]
     end
     # self.status = Express.get_status(trace["opCode"])
+    # self.save!
   end
 
+  def leaved_orig_at
+    return leaved_orig_at.blank? ? posting_date : leaved_orig_at
+  end
 
-  def self.get_traces(traces)
+  def self.get_traces_in_opcodes_and_shorted(traces)
     codes = ['711', '516', '460', '305', '389', '457']
 
-    return traces.reject{|x| ! x['opCode'].in? codes}
+    return traces.reject{|x| ! x['opCode'].in? codes}.sort{|x,y| x["opTime"] <=> y["opTime"]}
   end
 end

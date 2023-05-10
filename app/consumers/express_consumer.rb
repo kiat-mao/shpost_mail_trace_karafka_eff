@@ -62,7 +62,8 @@ class ExpressConsumer < ApplicationConsumer
 				      	message_hash = message.payload
 				      	# sleep(0.1)
 					      
-		      			Express.refresh_trace(message_hash, Time.now)
+					      ExpressConsumer.refresh_trace(message_hash, Time.now)
+		      			# Express.refresh_trace(message_hash, Time.now)
 		      		end
 		      	rescue Exception => e
 			      	@error_msg = "#{e.class.name} #{e.message}"
@@ -90,25 +91,9 @@ class ExpressConsumer < ApplicationConsumer
 
 
   def self.refresh_trace msg_hash, received_at
-    #init message
-    express_no = msg_hash.first["traceNo"]
+    return if Express.refresh_traces! msg_hash
 
-    last_trace = Express.get_last_trace msg_hash
 
-    express = Express.waiting.where("last_op_at < '#{last_trace['opTime']}'").find_by(express_no: express_no)
-
-    #only update not waiting express to avoid repeating
-    if ! express.blank? && express.waiting? 
-      express.refresh_trace! last_trace
-      return
-    end
-
-    traces = InternationalExpress.get_traces msg_hash
-
-  	international_express = InternationalExpress.waiting.find_by(express_no: express_no)
-
-  	if ! international_express.blank? && international_express.waiting? 
-  		international_express.refresh_traces! traces
-  	end
+    InternationalExpress.refresh_traces! msg_hash
   end
 end

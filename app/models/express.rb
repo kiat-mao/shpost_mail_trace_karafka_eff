@@ -41,7 +41,7 @@ class Express < ApplicationRecord
  
 
   #for karafka_eff
-  def self.refresh_trace msg_hash, received_at
+  def self.refresh_traces! msg_hash
     #init message
     express_no = msg_hash.first["traceNo"]
 
@@ -52,6 +52,9 @@ class Express < ApplicationRecord
     #only update not waiting express to avoid repeating
     if ! express.blank? && express.waiting? 
       express.refresh_trace! last_trace
+      return true
+    else
+      return false
     end
   end
 
