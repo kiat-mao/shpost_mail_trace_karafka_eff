@@ -5,7 +5,7 @@ class InternationalExpress < ApplicationRecord
   STATUS_NAME = { waiting: '未妥投', returns: '退回', out: 'out'}
 
 
-  def self.refresh_traces! msg_hash
+def self.refresh_traces! msg_hash
     express_no = msg_hash.first["traceNo"]
     international_express = InternationalExpress.waiting.find_by(express_no: express_no)
 
@@ -44,29 +44,31 @@ class InternationalExpress < ApplicationRecord
     when '516'
       self.is_arrived = true
       self.arrived_at = op_time
-      self.arrived_hour = ((self.arrived_at - self.leaved_orig_at)/60/60).to_i + 1
+      self.arrived_hours = ((self.arrived_at - self.orig_at)/60/60).to_i + 1
     when '460'
       self.is_leaved = true
       self.leaved_at = op_time
-      self.leaved_hour = ((self.leaved_at - self.leaved_orig_at)/60/60).to_i + 1
-      self.status = InternationalExpress::statuses[:out] 
+      self.leaved_hours = ((self.leaved_at - self.orig_at)/60/60).to_i + 1
+      #self.status = InternationalExpress::statuses[:out] 
     when '305'
       self.is_leaved_orig = true
       self.leaved_orig_at = op_time
-      # self.leaved_orig_hour = ((self.leaved_orig_at - self.leaved_orig_at)/60/60).to_i + 1
+      # self.leaved_orig_hours = ((self.leaved_orig_at - self.leaved_orig_at)/60/60).to_i + 1
       self.leaved_orig_after_18 = true if op_time.hour > 18
     when '389'
       self.is_leaved_center = true
       self.leaved_center_at = op_time
-      self.leaved_center_hour = ((self.leaved_center_at - self.leaved_orig_at)/60/60).to_i + 1
+      self.leaved_center_hours = ((self.leaved_center_at - self.orig_at)/60/60).to_i + 1
     when '457'
       self.is_takeoff = true
       self.takeoff_at = op_time
-      self.takeoff_hour = ((self.takeoff_at - self.leaved_center_at)/60/60).to_i + 1
+      if !leaved_center_at.blank?
+        self.takeoff_hours = ((self.takeoff_at - self.leaved_center_at)/60/60).to_i + 1
+      end
     end
 
     # return if trace.blank?
-    if self.last_op_at < op_time
+    if self.last_op_at.blank? || (self.last_op_at < op_time)
       self.last_op_at = op_time
       self.last_op_desc = trace["opDesc"]
       self.last_unit_name = trace["opOrgName"]
@@ -77,8 +79,8 @@ class InternationalExpress < ApplicationRecord
     # self.save!
   end
 
-  def leaved_orig_at
-    return leaved_orig_at.blank? ? posting_date : leaved_orig_at
+  def orig_at
+    return (leaved_orig_at.blank?) ? posting_date : leaved_orig_at
   end
 
   def self.get_traces_in_opcodes_and_shorted(traces)
