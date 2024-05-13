@@ -47,7 +47,7 @@ class Express < ApplicationRecord
 
     last_trace = Express.get_last_trace msg_hash
 
-    express = self.waiting.where("last_op_at < '#{last_trace['opTime']}'").find_by(express_no: express_no)
+    express = self.waiting.where("last_op_at < '#{last_trace['opTime']}'").or(Express.where(last_op_at:nil)).find_by(express_no: express_no)
 
     #only update not waiting express to avoid repeating
     if ! express.blank? && express.waiting? 
