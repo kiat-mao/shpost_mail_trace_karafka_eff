@@ -1,5 +1,5 @@
 class InternationalExpress < ApplicationRecord
-  belongs_to :business, optional: true
+  # belongs_to :business, optional: true
 
   enum status: {waiting: 'waiting', returns: 'returns', out: 'out'}
   STATUS_NAME = { waiting: '未妥投', returns: '退回', out: 'out'}

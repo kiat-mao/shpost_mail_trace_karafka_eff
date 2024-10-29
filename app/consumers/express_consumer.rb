@@ -91,9 +91,21 @@ class ExpressConsumer < ApplicationConsumer
 
 
   def self.refresh_trace msg_hash, received_at
-    return if Express.refresh_traces! msg_hash
+		begin
+			AirMails.refresh_traces! msg_hash
+		rescue Exception => e
+			@error_msg = "#{e.class.name} #{e.message}"
+			Rails.logger.error("#{e.class.name} #{e.message}")
+			
+			e.backtrace.each do |x|
+				@error_msg += "\n#{x}"
+				Rails.logger.error(x)
+			end
+		end
+
+    # return if Express.refresh_traces! msg_hash
 
 
-    InternationalExpress.refresh_traces! msg_hash
+    # InternationalExpress.refresh_traces! msg_hash
   end
 end
