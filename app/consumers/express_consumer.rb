@@ -92,7 +92,7 @@ class ExpressConsumer < ApplicationConsumer
 
   def self.refresh_trace msg_hash, received_at
 		begin
-			AirMails.refresh_traces! msg_hash
+			AirMail.refresh_traces! msg_hash
 		rescue Exception => e
 			@error_msg = "#{e.class.name} #{e.message}"
 			Rails.logger.error("#{e.class.name} #{e.message}")
@@ -103,9 +103,9 @@ class ExpressConsumer < ApplicationConsumer
 			end
 		end
 
-    # return if Express.refresh_traces! msg_hash
+    return if Express.refresh_traces! msg_hash
 
 
-    # InternationalExpress.refresh_traces! msg_hash
+    InternationalExpress.refresh_traces! msg_hash
   end
 end
