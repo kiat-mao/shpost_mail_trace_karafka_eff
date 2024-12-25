@@ -103,9 +103,9 @@ class ExpressConsumer < ApplicationConsumer
 			end
 		end
 
-    return if Express.refresh_traces! msg_hash
+    # return if Express.refresh_traces! msg_hash
 
 
-    InternationalExpress.refresh_traces! msg_hash
+    # InternationalExpress.refresh_traces! msg_hash
   end
 end

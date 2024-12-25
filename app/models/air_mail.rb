@@ -20,6 +20,10 @@ class AirMail < ApplicationRecord
   # GUANGDONG_PROVINCE_NO = '440000'
   # SHANGHAI_PROVINCE_NO = '310000'
 
+  PROVINCE_NO = ['310000', '440000']
+
+  MAIL_NO_START = '1'
+
   # GUANGZHOU_AIRCENTER_CODE = '51000061'
   # AIR_OP_CODE = '389'
 
@@ -55,7 +59,7 @@ class AirMail < ApplicationRecord
 
   def self.create_air_mail_by_trace! trace
     mail_no = trace['traceNo']
-
+    return if ! mail_no.start_with? MAIL_NO_START
     return if AirMail.exists?(mail_no: mail_no)
     
     flight_number = trace['vehicleCode']
@@ -77,8 +81,10 @@ class AirMail < ApplicationRecord
     air_mail.status = statuses[:waiting]
     air_mail.whereis = whereis[:in_transit]
 
-    # pkp = PkpWaybillBase.where(waybill_no: mail_no).last
+    pkp = PkpWaybillBase.where(waybill_no: mail_no).last
     if ! pkp.blank?
+      return if ! sender_province_no.in? PROVINCE_NO
+      return if ! receiver_province_no.in? PROVINCE_NO
       air_mail.sender_province_name = pkp.sender_province_name
       air_mail.sender_city_name = pkp.sender_city_name
       air_mail.sender_county_name = pkp.sender_county_name
@@ -90,18 +96,18 @@ class AirMail < ApplicationRecord
       air_mail.posting_date = pkp.biz_occur_date
       air_mail.transfer_type = pkp.transfer_type
 
-      if ! pkp_waybill_base.post_org_no.blank?
-        air_mail.post_unit_no = pkp_waybill_base.post_org_no
-        air_mail.post_unit_name = pkp_waybill_base.post_org_name
+      if ! pkp.post_org_no.blank?
+        air_mail.post_unit_no = pkp.post_org_no
+        air_mail.post_unit_name = pkp.post_org_name
         
-        post_unit = Unit.where(no: pkp_waybill_base.post_org_no).last
+        post_unit = Unit.where(no: pkp.post_org_no).last
         
         if ! post_unit.blank?
           air_mail.post_unit = post_unit
         end
       end
 
-      air_mail.posting_hour = pkp_waybill_base.biz_occur_date.hour
+      # air_mail.posting_hour = pkp.biz_occur_date.hour
 
       
       air_mail.save!
@@ -172,10 +178,9 @@ class AirMail < ApplicationRecord
     self.last_unit_no = last_trace["opOrgCode"]
     self.last_unit = Unit.find_by no: last_trace["opOrgCode"]
     
-    self.whereis = self.waiting? ? AirMail.to_whereis(last_trace["opCode"]) : nil
-    
     self.status = AirMail.get_status(last_trace["opCode"])
 
+    self.whereis = self.waiting? ? AirMail.to_whereis(last_trace["opCode"]) : whereis[:delivery_part]
   end
 
   def self.to_whereis(code)
