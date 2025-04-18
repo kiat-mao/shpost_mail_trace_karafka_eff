@@ -38,7 +38,12 @@ class Express < ApplicationRecord
   TRANSFER_TYPE_NOS =  {all_land: '3'}
   TRANSFER_TYPE_SELECT = {'3' => '全陆运', other_type: '其他'}
 
- 
+  ARRIVE_SUB_OP_CODE = '306'
+  IN_DELIVERY_OP_CODE = '702'
+  DELIVERY_FAILURE_OP_CODE = '705'
+
+  DELIVERY_PART_CODE = ['306', '307', '702', '705']
+  
 
   #for karafka_eff
   def self.refresh_traces! msg_hash
@@ -80,17 +85,34 @@ class Express < ApplicationRecord
     self.last_unit_name = last_trace["opOrgName"]
     self.last_unit_no = last_trace["opOrgCode"]
     self.last_unit = Unit.find_by no: last_trace["opOrgCode"]
-    self.whereis = self.waiting? ? Express.to_whereis(last_trace["opCode"]) : nil
-    self.status = Express.get_status(last_trace["opCode"])
+
+    opCode = last_trace["opCode"]
+    
+    self.whereis = self.waiting? ? Express.to_whereis(opCode) : nil
+
+
+    #for zmrs中免日上
+    if opCode.eql? ARRIVE_SUB_OP_CODE
+      self.is_arrive_sub  = true
+    elsif opCode.eql? IN_DELIVERY_OP_CODE
+      self.is_arrive_sub  = true
+      self.is_in_delivery = true
+    elsif opCode.eql? DELIVERY_FAILURE_OP_CODE
+      self.is_arrive_sub  = true
+      self.is_in_delivery = true
+      self.is_delivery_failure = true
+    end
+
+    self.status = Express.get_status(opCode)
 
     # 4 dewu
     self.last_prov = last_trace["opOrgProvName"]
     self.last_city = last_trace["opOrgCity"]
-    self.is_change_addr = true if last_trace["opCode"].eql?("802")
-    self.is_cancelled  = true if last_trace["opCode"].eql?("801")
+    self.is_change_addr = true if opCode.eql?("802")
+    self.is_cancelled  = true if opCode.eql?("801")
 
     begin
-      self.delivered_status = Express.get_delivered_status(last_trace["opCode"], last_trace["opDesc"])
+      self.delivered_status = Express.get_delivered_status(opCode, last_trace["opDesc"])
     rescue
     end
 
@@ -146,8 +168,7 @@ class Express < ApplicationRecord
   end
 
   def self.to_whereis(code)
-    delivery_part_code = ['306', '307', '702', '705']
-    if code.in? delivery_part_code
+    if code.in? DELIVERY_PART_CODE
       whereis[:delivery_part]
     else
       whereis[:in_transit]
