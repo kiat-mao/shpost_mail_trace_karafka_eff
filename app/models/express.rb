@@ -152,9 +152,9 @@ class Express < ApplicationRecord
   def self.get_delivered_status(opt_code, opt_desc)
     if !opt_code.blank?
       if opt_code.eql? '704'
-        if opt_desc.include? '已签收'
+        if opt_desc.include? '已妥收'
           delivered_status = Express::delivered_statuses[:own]
-        elsif opt_desc.include? '已代签收'
+        elsif opt_desc.include? '已代收' && (opt_desc.include?('家人') || opt_desc.include?('朋友') || opt_desc.include?('同事') || opt_desc.include?('邻居'))
           delivered_status = Express::delivered_statuses[:other]
         else
           delivered_status = Express::delivered_statuses[:unit]
