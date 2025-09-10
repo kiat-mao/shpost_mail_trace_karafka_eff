@@ -77,7 +77,17 @@ class AirMail < ApplicationRecord
   end
 
   def self.create_air_mails! msg_hash
-    air_mails_trace = msg_hash.reject{|x| ! x['opCode'].in?(FLIGHT_LAND_CODE)}.reject{|x| ! x['vehicleCode'].in?(IMPORT_VEHICLE_CODE | EXPORT_VECHICLE_CODE)}.sort{|x,y| x["opTime"] <=> y["opTime"]}
+    air_mails_trace = msg_hash.reject{|x| ! x['opCode'].in?(FLIGHT_LAND_CODE)}
+    
+    #update flight_number to pkp_waybill_bases
+    air_mails_trace.each do |trace|
+      flight_number = trace['vehicleCode']
+      mail_no = trace['traceNo']
+      pkp_waybill_base = PkpWaybillBase.find_by(waybill_no: mail_no)
+      pkp_waybill_base.update!(flight_number: flight_number) if pkp_waybill_base
+    end
+
+    air_mails_trace = air_mails_trace.reject{|x| ! x['vehicleCode'].in?(IMPORT_VEHICLE_CODE | EXPORT_VECHICLE_CODE)}.sort{|x,y| x["opTime"] <=> y["opTime"]}
 
     air_mails_trace.each do |trace|
       air_mail = create_air_mail_by_trace! trace
